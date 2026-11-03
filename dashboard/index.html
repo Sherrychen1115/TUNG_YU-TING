@@ -24,6 +24,16 @@
   --excluded: #b9b7b0;
   --accent-bg: #eef4fc;
   --warn-bg: #fdf3ec;
+  /* 頁籤色：取自圖表配色；填色調深到白字對比約 4.6:1 */
+  --tab1: #52514e;            /* 深灰（--ink-2） */
+  --tab2: #2974d0;            /* 股價藍 --s1 調深 */
+  --tab3: #15855d;            /* 薪資綠 --s3 調深 */
+  --tab4: #be542a;            /* GDP 橘 --s2 調深 */
+  --tab1-line: var(--tab1);
+  --tab2-line: var(--tab2);
+  --tab3-line: var(--tab3);
+  --tab4-line: var(--tab4);
+  --tab-shadow: 0 2px 8px rgba(11, 11, 11, 0.18);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -44,6 +54,11 @@
     --excluded: #55544f;
     --accent-bg: #16233a;
     --warn-bg: #2e1d14;
+    --tab1-line: #a3a19a;
+    --tab2-line: #3987e5;
+    --tab3-line: #199e70;
+    --tab4-line: #d95926;
+    --tab-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
   }
 }
 :root[data-theme="dark"] {
@@ -64,6 +79,11 @@
   --excluded: #55544f;
   --accent-bg: #16233a;
   --warn-bg: #2e1d14;
+  --tab1-line: #a3a19a;
+  --tab2-line: #3987e5;
+  --tab3-line: #199e70;
+  --tab4-line: #d95926;
+  --tab-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
 }
 
 * { box-sizing: border-box; }
@@ -86,24 +106,57 @@ header p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
 nav.tabs {
   position: sticky; top: 0; z-index: 5;
   background: var(--page);
-  border-bottom: 1px solid var(--border);
   margin-top: 16px;
+  padding-top: 8px;
+  border-bottom: 2px solid var(--active, var(--border));
+  transition: border-color 0.2s;
 }
-.tablist { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs:has(.tab-1[aria-selected="true"]) { --active: var(--tab1-line); }
+nav.tabs:has(.tab-2[aria-selected="true"]) { --active: var(--tab2-line); }
+nav.tabs:has(.tab-3[aria-selected="true"]) { --active: var(--tab3-line); }
+nav.tabs:has(.tab-4[aria-selected="true"]) { --active: var(--tab4-line); }
+.tablist { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 0; }
 .tablist::-webkit-scrollbar { display: none; }
 .tab {
+  --c: var(--tab1); --cl: var(--tab1-line);
   flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 8px;
   font: inherit; font-size: 0.95rem;
-  color: var(--ink-2);
-  background: none; border: 0; cursor: pointer;
-  padding: 12px 14px 10px;
-  border-bottom: 2px solid transparent;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--cl);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  padding: 8px 14px 9px;
   white-space: nowrap;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-.tab:hover { color: var(--ink); }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--s1); font-weight: 700; }
-.tab:focus-visible { outline: 2px solid var(--s1); outline-offset: -2px; border-radius: 4px; }
-.tab .num { color: var(--muted); font-weight: 400; margin-right: 4px; }
+.tab-2 { --c: var(--tab2); --cl: var(--tab2-line); }
+.tab-3 { --c: var(--tab3); --cl: var(--tab3-line); }
+.tab-4 { --c: var(--tab4); --cl: var(--tab4-line); }
+.tab:hover { background: color-mix(in srgb, var(--cl) 14%, var(--surface)); }
+.tab[aria-selected="true"] {
+  background: var(--c); color: #fff; font-weight: 700;
+  border-color: var(--c);
+  box-shadow: var(--tab-shadow);
+}
+.tab[aria-selected="true"]:hover { background: color-mix(in srgb, var(--c) 90%, #fff); }
+.tab:focus-visible { outline: 2px solid var(--cl); outline-offset: 2px; }
+.tab .num {
+  flex: 0 0 auto;
+  display: inline-grid; place-items: center;
+  width: 1.45rem; height: 1.45rem; border-radius: 50%;
+  background: var(--c); color: #fff;
+  font-size: 0.78rem; font-weight: 700; line-height: 1;
+  transition: background-color 0.2s, color 0.2s;
+}
+.tab[aria-selected="true"] .num { background: #fff; color: var(--c); }
+@media (max-width: 600px) {
+  .tablist { flex-wrap: wrap; overflow-x: visible; }
+  .tab { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: normal; text-align: left; font-size: 0.88rem; padding: 7px 10px 8px; line-height: 1.35; }
+}
 
 main { padding: 20px 0 48px; }
 section[role="tabpanel"] { display: none; }
@@ -219,10 +272,10 @@ footer p { margin: 0 0 4px; }
 
   <nav class="tabs" aria-label="儀表板頁籤">
     <div class="tablist" role="tablist">
-      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="num">1</span>台灣整體經濟概況</button>
-      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="num">2</span>股市與 GDP 比較</button>
-      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="num">3</span>經濟成長與實質薪資</button>
-      <button class="tab" role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1"><span class="num">4</span>綜合判斷</button>
+      <button class="tab tab-1" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="num">1</span>台灣整體經濟概況</button>
+      <button class="tab tab-2" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="num">2</span>股市與 GDP 比較</button>
+      <button class="tab tab-3" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="num">3</span>經濟成長與實質薪資</button>
+      <button class="tab tab-4" role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1"><span class="num">4</span>綜合判斷</button>
     </div>
   </nav>
 
