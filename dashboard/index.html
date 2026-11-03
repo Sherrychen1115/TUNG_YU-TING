@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台股與經濟儀表板</title>
+<meta name="description" content="2002–2025 年台灣加權股價指數、實質 GDP 成長率與實質經常性薪資的比較儀表板">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d68;
+  --axis-ink: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --shade: rgba(137, 135, 129, 0.13);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --excluded: #b9b7b0;
+  --accent-bg: #eef4fc;
+  --warn-bg: #fdf3ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #a3a19a;
+    --axis-ink: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --shade: rgba(195, 194, 183, 0.10);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --excluded: #55544f;
+    --accent-bg: #16233a;
+    --warn-bg: #2e1d14;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #a3a19a;
+  --axis-ink: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --shade: rgba(195, 194, 183, 0.10);
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --excluded: #55544f;
+  --accent-bg: #16233a;
+  --warn-bg: #2e1d14;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "微軟正黑體",
+    "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+header { padding: 28px 0 8px; }
+header h1 { font-size: clamp(1.35rem, 3.6vw, 1.9rem); line-height: 1.3; margin: 0 0 6px; letter-spacing: 0.01em; }
+header p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+
+nav.tabs {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--page);
+  border-bottom: 1px solid var(--border);
+  margin-top: 16px;
+}
+.tablist { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tablist::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 0 0 auto;
+  font: inherit; font-size: 0.95rem;
+  color: var(--ink-2);
+  background: none; border: 0; cursor: pointer;
+  padding: 12px 14px 10px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--s1); font-weight: 700; }
+.tab:focus-visible { outline: 2px solid var(--s1); outline-offset: -2px; border-radius: 4px; }
+.tab .num { color: var(--muted); font-weight: 400; margin-right: 4px; }
+
+main { padding: 20px 0 48px; }
+section[role="tabpanel"] { display: none; }
+section[role="tabpanel"].active { display: block; }
+h2 { font-size: 1.3rem; margin: 4px 0 4px; }
+h3 { font-size: 1.05rem; margin: 0 0 2px; }
+.lead { color: var(--ink-2); margin: 0 0 18px; max-width: 72ch; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 18px 14px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.card .sub { color: var(--ink-2); font-size: 0.88rem; margin: 0 0 12px; }
+.card .foot { color: var(--muted); font-size: 0.8rem; margin: 10px 0 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+.grid-2 > .card { margin-bottom: 0; }
+.stack { display: grid; gap: 16px; margin-bottom: 16px; }
+
+.chart-box { position: relative; height: 340px; }
+.chart-box.tall { height: 400px; }
+@media (max-width: 600px) {
+  .chart-box { height: 280px; }
+  .chart-box.tall { height: 320px; }
+  .card { padding: 14px 12px 12px; }
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; font-size: 0.85rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.sw.box { height: 10px; width: 12px; border-radius: 2px; }
+.sw.dot { width: 9px; height: 9px; border-radius: 50%; }
+.sw.diamond { width: 9px; height: 9px; transform: rotate(45deg); border-radius: 1px; }
+.sw.ring { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--excluded); background: transparent; }
+.sw.dash { background: none; border-top: 2px dashed var(--axis-ink); height: 0; }
+.sw.shade { width: 14px; height: 10px; background: var(--shade); border: 1px solid var(--border); }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 16px; }
+.filters label { font-size: 0.9rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+select {
+  font: inherit; font-size: 0.92rem; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--axis); border-radius: 8px;
+  padding: 5px 8px; min-height: 36px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip, .seg button {
+  font: inherit; font-size: 0.85rem; cursor: pointer;
+  color: var(--ink-2); background: var(--surface);
+  border: 1px solid var(--axis); border-radius: 999px; padding: 4px 12px; min-height: 32px;
+}
+.chip[aria-pressed="true"], .seg button[aria-pressed="true"] { color: #fff; background: var(--s1); border-color: var(--s1); }
+.chip:focus-visible, .seg button:focus-visible, select:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.check { font-size: 0.9rem; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+/* stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .k { font-size: 0.85rem; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.tile .v { font-size: 1.65rem; font-weight: 700; line-height: 1.25; margin-top: 4px; }
+.tile .d { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+/* tables */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--grid); text-align: right; vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; white-space: nowrap; border-bottom-color: var(--axis); }
+td { font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child, td.l, th.l { text-align: left; }
+td.note { text-align: left; color: var(--ink-2); font-size: 0.82rem; min-width: 16em; }
+td.blank { color: var(--muted); }
+td .small { display: block; color: var(--muted); font-size: 0.76rem; white-space: nowrap; }
+tr.hl td { background: var(--accent-bg); }
+details { margin-top: 4px; }
+summary { cursor: pointer; color: var(--s1); font-size: 0.92rem; padding: 4px 0; }
+summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 4px; }
+
+/* prose */
+.callout { border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+.callout.info { background: var(--accent-bg); }
+.callout.warn { background: var(--warn-bg); }
+.callout p { margin: 0 0 6px; }
+.callout p:last-child { margin-bottom: 0; }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; margin-bottom: 16px; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.finding p { margin: 6px 0 0; color: var(--ink-2); font-size: 0.93rem; }
+.tag { display: inline-block; font-size: 0.75rem; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; border: 1px solid var(--axis); color: var(--ink-2); font-weight: 400; }
+.tag.explore { border-color: var(--s2); color: var(--ink); }
+ul.limits { margin: 6px 0 0; padding-left: 1.2em; }
+ul.limits li { margin-bottom: 6px; }
+ul.limits b { color: var(--ink); }
+.muted { color: var(--muted); }
+footer { color: var(--muted); font-size: 0.8rem; padding: 0 0 32px; }
+footer p { margin: 0 0 4px; }
+.err { display: none; color: var(--ink); background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>股市上漲，代表整體經濟變好嗎？</h1>
+    <p>台灣加權股價指數、實質 GDP 成長率與實質經常性薪資，2002–2025 年（2001 年為基期）</p>
+  </header>
+  <div class="err" id="err">圖表程式庫（Chart.js）載入失敗，請確認網路連線後重新整理。下方表格與文字仍可閱讀。</div>
+
+  <nav class="tabs" aria-label="儀表板頁籤">
+    <div class="tablist" role="tablist">
+      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="num">1</span>台灣整體經濟概況</button>
+      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="num">2</span>股市與 GDP 比較</button>
+      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="num">3</span>經濟成長與實質薪資</button>
+      <button class="tab" role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1"><span class="num">4</span>AI 分析與綜合判斷</button>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ============ 1 ============ -->
+    <section role="tabpanel" id="p1" aria-labelledby="t1" class="active">
+      <h2>台灣整體經濟概況</h2>
+      <p class="lead">選擇年份範圍，查看這段期間加權指數、實質 GDP 成長率與實質薪資年增率的變化。</p>
+
+      <div class="filters" role="group" aria-label="年份範圍">
+        <label>起始年 <select id="yFrom"></select></label>
+        <label>結束年 <select id="yTo"></select></label>
+        <div class="chips" id="presets">
+          <button class="chip" data-from="2002" data-to="2025">全部 2002–2025</button>
+          <button class="chip" data-from="2002" data-to="2013">2002–2013</button>
+          <button class="chip" data-from="2014" data-to="2025">2014–2025</button>
+          <button class="chip" data-from="2016" data-to="2025">近 10 年</button>
+        </div>
+      </div>
+
+      <div class="tiles" id="tiles1"></div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <h3>加權指數年底收盤</h3>
+          <p class="sub">每年 12 月最後一個交易日的收盤指數（點）</p>
+          <div class="chart-box"><canvas id="c1a" role="img" aria-label="加權指數年底收盤折線圖"></canvas></div>
+          <p class="foot">名目價格指數，不含股利、未扣除通膨。</p>
+        </div>
+        <div class="card">
+          <h3>實質 GDP 成長率與實質薪資年增率</h3>
+          <div class="legend">
+            <span><i class="sw" style="background:var(--s2)"></i>實質 GDP 成長率</span>
+            <span><i class="sw" style="background:var(--s3)"></i>實質薪資年增率</span>
+          </div>
+          <div class="chart-box"><canvas id="c1b" role="img" aria-label="實質 GDP 成長率與實質薪資年增率折線圖"></canvas></div>
+          <p class="foot">2019 年實質薪資年增率官方未公布（統計範圍擴大），以空白呈現。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>查看資料表</summary>
+          <div class="table-wrap"><table id="tbl1"></table></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ 2 ============ -->
+    <section role="tabpanel" id="p2" aria-labelledby="t2">
+      <h2>股市與 GDP 比較</h2>
+      <p class="lead">把 2002 年設為 100，比較加權指數和實質 GDP 的累積變化。灰底是 2008–2009 金融海嘯和 2020 年疫情。</p>
+
+      <div class="tiles" id="tiles2"></div>
+
+      <div class="card">
+        <h3>累積變化（2002 年 = 100）</h3>
+        <div class="filters" style="margin:6px 0 8px">
+          <label class="check"><input type="checkbox" id="addWage"> 加入實質經常性薪資</label>
+        </div>
+        <div class="legend" id="legend2"></div>
+        <div class="chart-box tall"><canvas id="c2" role="img" aria-label="加權指數與實質 GDP 標準化指數折線圖"></canvas></div>
+        <p class="foot">加權指數為年底收盤（名目、不含股利）；實質 GDP 由每年經濟成長率連乘而得；兩者單位不同（名目 vs 實質），差距中包含物價上漲。</p>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>查看資料表</summary>
+          <div class="table-wrap"><table id="tbl2"></table></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ 3 ============ -->
+    <section role="tabpanel" id="p3" aria-labelledby="t3">
+      <h2>經濟成長與實質薪資</h2>
+      <p class="lead">長條是實質 GDP 成長率，折線是實質經常性薪資年增率。虛線標出薪資統計範圍調整的年份；缺值的年份保留空白，不補數字。</p>
+
+      <div class="card">
+        <h3>實質 GDP 成長率 vs 實質薪資年增率（%）</h3>
+        <div class="legend">
+          <span><i class="sw box" style="background:var(--s2)"></i>實質 GDP 成長率</span>
+          <span><i class="sw" style="background:var(--s3)"></i>實質薪資年增率</span>
+          <span><i class="sw dash"></i>薪資統計範圍調整</span>
+        </div>
+        <div class="chart-box tall"><canvas id="c3a" role="img" aria-label="實質 GDP 成長率長條與實質薪資年增率折線圖"></canvas></div>
+        <p class="foot">2009 年：新增教育業（官方仍公布年增率）。2019 年：新增研究發展服務業、學前教育、社會工作服務業，官方不公布年增率，圖中保留空白。</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <h3>實質經常性薪資（元／月）</h3>
+          <p class="sub">工業及服務業受僱員工每人每月，經常性薪資不含獎金</p>
+          <div class="chart-box"><canvas id="c3b" role="img" aria-label="實質經常性薪資折線圖"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>薪資斷點前後的變化</h3>
+          <p class="sub">統計範圍一致的區段才適合直接比較</p>
+          <div class="table-wrap"><table id="tbl3seg"></table></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>查看資料表</summary>
+          <div class="table-wrap"><table id="tbl3"></table></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ 4 ============ -->
+    <section role="tabpanel" id="p4" aria-labelledby="t4">
+      <h2>AI 分析與綜合判斷</h2>
+      <p class="lead">本頁的統計與文字由 AI 協助整理自 <code>analysis/output_long/</code>，請搭配下方的研究限制閱讀。</p>
+
+      <div class="callout warn">
+        <p><b>先看限制：</b>相關不等於因果；每組只有約 17–24 個年度；共做了 40 個檢定，需要多重比較校正；股價是名目值、不含股利；薪資是經常性薪資、不含獎金。</p>
+      </div>
+
+      <div class="callout info">
+        <p><b>一句話結論：</b>2002–2025 年間，同一年的股價報酬和經濟成長、實質薪資都沒有顯著相關；長期來看，實質 GDP 增加約 147%（約 2.5 倍），實質經常性薪資卻只增加約 3%。股市和「下一年」經濟成長的正相關只是探索性線索。</p>
+      </div>
+
+      <div class="card">
+        <h3>相關係數（全樣本）</h3>
+        <p class="sub">Pearson 與 Spearman 等級相關；Holm 校正為 5 組之間的多重比較校正</p>
+        <div class="table-wrap"><table id="tblCorr"></table></div>
+        <p class="foot">p 值為雙尾檢定。d1、d2 為探索性分析（今年股價報酬 vs 下一年），2019 年薪資年增率官方缺值，相關組合已排除。</p>
+      </div>
+
+      <div class="card">
+        <h3>穩健性檢查</h3>
+        <p class="sub">排除特殊年份後，相關係數是否仍然相同？</p>
+        <div class="filters" style="margin-bottom:10px">
+          <div class="seg" role="group" aria-label="相關方法" id="methodSeg">
+            <button aria-pressed="true" data-m="pearson">Pearson r</button>
+            <button aria-pressed="false" data-m="spearman">Spearman ρ</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="tblRobust"></table></div>
+        <p class="foot">每格：係數；下方小字為 n 與未校正 p 值。「＊」表示未校正 p &lt; 0.05；「†」表示 20 個 Pearson 檢定一起做 Holm 校正後仍 &lt; 0.05。d1、d2 只要今年或下一年落在排除年份就拿掉該組。</p>
+      </div>
+
+      <div class="card">
+        <h3>散布圖</h3>
+        <div class="filters" style="margin:6px 0 8px">
+          <label>組別 <select id="pairSel"></select></label>
+          <label>樣本 <select id="sampleSel"></select></label>
+        </div>
+        <div class="legend">
+          <span><i class="sw dot" style="background:var(--s1)"></i>一般年份</span>
+          <span><i class="sw diamond" style="background:var(--s2)"></i>涉及 2008、2009 或 2020</span>
+          <span><i class="sw ring"></i>此樣本中被排除</span>
+          <span><i class="sw dash"></i>線性趨勢線（只看方向）</span>
+        </div>
+        <p class="sub" id="scatterStat" style="margin:0 0 8px"></p>
+        <div class="chart-box tall"><canvas id="c4" role="img" aria-label="相關散布圖"></canvas></div>
+      </div>
+
+      <h3 style="margin:24px 0 10px">主要發現</h3>
+      <div class="findings">
+        <div class="finding"><h3>1. 三條年增率走勢差很多</h3>
+          <p>股市每年大起大落（2008 年跌 46%、2009 年漲 78%），經濟成長大多在 1%–7%，實質薪資大多在 ±1.5% 之間；23 個有數字的年度中有 11 年實質薪資是負成長。</p></div>
+        <div class="finding"><h3>2. 股市的累積漲幅遠大於實質薪資</h3>
+          <p>以 2002 年 = 100，2025 年加權指數為 650.5，實質經常性薪資為 102.8。薪資在 2002–2009 年往下走，直到 2019–2020 年才回到 2002 年的水準。</p></div>
+        <div class="finding"><h3>3. 同一年的相關都不顯著</h3>
+          <p>股價 vs GDP r = −0.05；GDP vs 薪資 r = 0.33；股價 vs 薪資 r = 0.17，p 值都大於 0.1。這代表「沒有找到證據」，不等於證明兩者無關。</p></div>
+        <div class="finding"><h3>4. 排除特殊年份後結論一致</h3>
+          <p>a、b、c 三組在任何樣本下都不顯著。GDP 與薪資的弱正相關主要來自 2008–2009，排除後 r 降到 0.02。排除 2020 年影響很小。</p></div>
+        <div class="finding"><h3>5. 經濟成長沒有反映在薪資上</h3>
+          <p>2002–2025 年實質 GDP +146.7%，實質經常性薪資只 +2.8%。統計範圍一致的三段，薪資年複合成長率都在 −0.8% 到 +0.5% 之間。這是描述性比較，不能說明原因。</p></div>
+        <div class="finding"><h3>6. 股市與下一年經濟成長<span class="tag explore">探索性</span></h3>
+          <p>全樣本 r = 0.78，但主要來自金融海嘯。排除 2008–2009 後 r = 0.60，20 個檢定一起校正後 p ≈ 0.09，不再顯著。只能當作線索，不能說股市能預測或造成經濟成長。</p></div>
+      </div>
+
+      <div class="card">
+        <h3>研究限制</h3>
+        <ul class="limits">
+          <li><b>相關不等於因果。</b>相關係數只描述兩個數字是否常一起變動，不能說明誰影響誰，也可能都受第三個因素影響（例如全球景氣、半導體循環、利率）。</li>
+          <li><b>樣本很小。</b>每組只有約 17–24 個年度（主表 22–24 年）；少數極端年份就可能大幅改變結果。檢定力不高，「不顯著」不代表「沒有關係」。</li>
+          <li><b>檢定組數多，需要多重比較校正。</b>5 組相關 × 4 種樣本 × 2 種方法，共 40 個檢定；判讀時請以校正後的 p 值為主。</li>
+          <li><b>股價是名目值、不含股利。</b>加權指數是價格指數，沒有扣除通膨，也沒有計入現金股利，不是投資人的實際報酬，也不能直接和實質 GDP、實質薪資比大小。</li>
+          <li><b>薪資是經常性薪資，不含獎金。</b>年終獎金、績效獎金、員工分紅都不在內，可能低估受薪者總所得的變動。</li>
+          <li><b>薪資統計範圍調整。</b>2009 年、2019 年各調整一次行業範圍；2019 年官方年增率空白，相關分析已排除該年。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>資料來源：臺灣證券交易所（每日市場成交資訊）、行政院主計總處（國民所得統計、薪資及生產力統計）。</p>
+    <p>資料檔：data/clean/annual_long.csv；分析：analysis/analysis_long.py、analysis/output_long/。儀表板資料產生日期：2026-11-03。</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+"use strict";
+const D = {"rows":[{"year":2001,"taiex_close":5551.24,"taiex_return":null,"gdp_growth":null,"real_wage":42090,"real_wage_growth":1.63,"note":"基期年，只用來計算 2002 年的報酬與年增率；GDP.xls 無此年經濟成長率"},{"year":2002,"taiex_close":4452.45,"taiex_return":-19.79,"gdp_growth":5.483675527822203,"real_wage":42498,"real_wage_growth":0.97,"note":""},{"year":2003,"taiex_close":5890.69,"taiex_return":32.3,"gdp_growth":4.224541667187187,"real_wage":42689,"real_wage_growth":0.45,"note":""},{"year":2004,"taiex_close":6139.69,"taiex_return":4.23,"gdp_growth":6.951923815937314,"real_wage":42366,"real_wage_growth":-0.76,"note":""},{"year":2005,"taiex_close":6548.34,"taiex_return":6.66,"gdp_growth":5.383220530411277,"real_wage":41749,"real_wage_growth":-1.46,"note":""},{"year":2006,"taiex_close":7823.72,"taiex_return":19.48,"gdp_growth":5.770431134186677,"real_wage":41901,"real_wage_growth":0.36,"note":""},{"year":2007,"taiex_close":8506.28,"taiex_return":8.72,"gdp_growth":6.850087096728639,"real_wage":41846,"real_wage_growth":-0.13,"note":""},{"year":2008,"taiex_close":4591.22,"taiex_return":-46.03,"gdp_growth":0.7987313046399568,"real_wage":40490,"real_wage_growth":-3.24,"note":""},{"year":2009,"taiex_close":8188.11,"taiex_return":78.34,"gdp_growth":-1.6136436517042094,"real_wage":39996,"real_wage_growth":-1.22,"note":"98 年 1 月起薪資統計新增教育業（教育輔助及其他教育業）；官方仍公布年增率"},{"year":2010,"taiex_close":8972.5,"taiex_return":9.58,"gdp_growth":10.245291714551863,"real_wage":40291,"real_wage_growth":0.74,"note":""},{"year":2011,"taiex_close":7072.08,"taiex_return":-21.18,"gdp_growth":3.673083668578043,"real_wage":40277,"real_wage_growth":-0.03,"note":""},{"year":2012,"taiex_close":7699.5,"taiex_return":8.87,"gdp_growth":2.2209055104388136,"real_wage":40008,"real_wage_growth":-0.67,"note":""},{"year":2013,"taiex_close":8611.51,"taiex_return":11.85,"gdp_growth":2.483108097636095,"real_wage":40078,"real_wage_growth":0.17,"note":""},{"year":2014,"taiex_close":9307.26,"taiex_return":8.08,"gdp_growth":4.7187389450445005,"real_wage":40304,"real_wage_growth":0.56,"note":""},{"year":2015,"taiex_close":8338.06,"taiex_return":-10.41,"gdp_growth":1.46519242994598,"real_wage":40953,"real_wage_growth":1.61,"note":""},{"year":2016,"taiex_close":9253.5,"taiex_return":10.98,"gdp_growth":2.1650071114037175,"real_wage":40911,"real_wage_growth":-0.1,"note":""},{"year":2017,"taiex_close":10642.86,"taiex_return":15.01,"gdp_growth":3.6617058857095985,"real_wage":41407,"real_wage_growth":1.21,"note":""},{"year":2018,"taiex_close":9727.41,"taiex_return":-8.6,"gdp_growth":2.905486353758212,"real_wage":41887,"real_wage_growth":1.16,"note":""},{"year":2019,"taiex_close":11997.14,"taiex_return":23.33,"gdp_growth":3.055305966796569,"real_wage":42421,"real_wage_growth":null,"note":"108 年 1 月起薪資統計新增研究發展服務業、學前教育、社會工作服務業，行業範圍擴大，官方年增率不與前一年比較（原檔為「-」），保留空白"},{"year":2020,"taiex_close":14732.53,"taiex_return":22.8,"gdp_growth":3.420267125046224,"real_wage":43113,"real_wage_growth":1.63,"note":""},{"year":2021,"taiex_close":18218.84,"taiex_return":23.66,"gdp_growth":6.720325266930812,"real_wage":43045,"real_wage_growth":-0.16,"note":""},{"year":2022,"taiex_close":14137.69,"taiex_return":-22.4,"gdp_growth":2.6835309370549454,"real_wage":42943,"real_wage_growth":-0.24,"note":""},{"year":2023,"taiex_close":17930.81,"taiex_return":26.83,"gdp_growth":1.084965173338944,"real_wage":42837,"real_wage_growth":-0.25,"note":""},{"year":2024,"taiex_close":23035.1,"taiex_return":28.47,"gdp_growth":5.267087536917887,"real_wage":43085,"real_wage_growth":0.58,"note":""},{"year":2025,"taiex_close":28963.6,"taiex_return":25.74,"gdp_growth":8.755632389128344,"real_wage":43691,"real_wage_growth":1.41,"note":""}],"index":{"year":[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025],"taiex":[100.0,132.3,137.9,147.1,175.7,191.0,103.1,183.9,201.5,158.8,172.9,193.4,209.0,187.3,207.8,239.0,218.5,269.5,330.9,409.2,317.5,402.7,517.4,650.5],"wage":[100.0,100.4,99.7,98.2,98.6,98.5,95.3,94.1,94.8,94.8,94.1,94.3,94.8,96.4,96.3,97.4,98.6,99.8,101.4,101.3,101.0,100.8,101.4,102.8],"gdp":[100.0,104.2,111.5,117.5,124.2,132.8,133.8,131.7,145.2,150.5,153.8,157.6,165.1,167.5,171.1,177.4,182.5,188.1,194.6,207.6,213.2,215.5,226.9,246.7]},"main":[{"pair":"a","x":"股價年報酬率","y":"實質 GDP 成長率","exploratory":"否","x_years":"2002–2025","missing_x_years":"","dropped_x_years":"","n":24,"pearson_r":-0.046,"pearson_p":0.83129,"spearman_rho":0.05,"spearman_p":0.818094,"pearson_p_holm_main5":0.892764},{"pair":"b","x":"實質 GDP 成長率","y":"實質薪資年增率","exploratory":"否","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"","n":23,"pearson_r":0.326,"pearson_p":0.129391,"spearman_rho":0.242,"spearman_p":0.265727,"pearson_p_holm_main5":0.517564},{"pair":"c","x":"股價年報酬率","y":"實質薪資年增率","exploratory":"否","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"","n":23,"pearson_r":0.167,"pearson_p":0.446382,"spearman_rho":0.131,"spearman_p":0.550016,"pearson_p_holm_main5":0.892764},{"pair":"d1","x":"股價年報酬率","y":"實質 GDP 成長率（下一年）","exploratory":"是","x_years":"2002–2024","missing_x_years":"","dropped_x_years":"","n":23,"pearson_r":0.777,"pearson_p":1.3e-05,"spearman_rho":0.665,"spearman_p":0.000536,"pearson_p_holm_main5":6.5e-05},{"pair":"d2","x":"股價年報酬率","y":"實質薪資年增率（下一年）","exploratory":"是","x_years":"2002–2024","missing_x_years":"2018","dropped_x_years":"","n":22,"pearson_r":0.317,"pearson_p":0.150705,"spearman_rho":0.392,"spearman_p":0.070841,"pearson_p_holm_main5":0.517564}],"robust":[{"pair":"a","x":"股價年報酬率","y":"實質 GDP 成長率","exploratory":"否","sample":"全樣本","x_years":"2002–2025","missing_x_years":"","dropped_x_years":"","n":24,"pearson_r":-0.046,"pearson_p":0.83129,"spearman_rho":0.05,"spearman_p":0.818094,"pearson_p_holm_all20":1.0},{"pair":"a","x":"股價年報酬率","y":"實質 GDP 成長率","exploratory":"否","sample":"排除 2008–2009","x_years":"2002–2025","missing_x_years":"","dropped_x_years":"2008,2009","n":22,"pearson_r":0.175,"pearson_p":0.437309,"spearman_rho":0.077,"spearman_p":0.732221,"pearson_p_holm_all20":1.0},{"pair":"a","x":"股價年報酬率","y":"實質 GDP 成長率","exploratory":"否","sample":"排除 2020","x_years":"2002–2025","missing_x_years":"","dropped_x_years":"2020","n":23,"pearson_r":-0.04,"pearson_p":0.855842,"spearman_rho":0.056,"spearman_p":0.798523,"pearson_p_holm_all20":1.0},{"pair":"a","x":"股價年報酬率","y":"實質 GDP 成長率","exploratory":"否","sample":"排除 2008、2009、2020","x_years":"2002–2025","missing_x_years":"","dropped_x_years":"2008,2009,2020","n":21,"pearson_r":0.198,"pearson_p":0.39048,"spearman_rho":0.088,"spearman_p":0.703456,"pearson_p_holm_all20":1.0},{"pair":"b","x":"實質 GDP 成長率","y":"實質薪資年增率","exploratory":"否","sample":"全樣本","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"","n":23,"pearson_r":0.326,"pearson_p":0.129391,"spearman_rho":0.242,"spearman_p":0.265727,"pearson_p_holm_all20":1.0},{"pair":"b","x":"實質 GDP 成長率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2008–2009","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2008,2009","n":21,"pearson_r":0.024,"pearson_p":0.916147,"spearman_rho":0.025,"spearman_p":0.915449,"pearson_p_holm_all20":1.0},{"pair":"b","x":"實質 GDP 成長率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2020","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2020","n":22,"pearson_r":0.359,"pearson_p":0.100439,"spearman_rho":0.282,"spearman_p":0.203955,"pearson_p_holm_all20":1.0},{"pair":"b","x":"實質 GDP 成長率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2008、2009、2020","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2008,2009,2020","n":20,"pearson_r":0.069,"pearson_p":0.77139,"spearman_rho":0.066,"spearman_p":0.781664,"pearson_p_holm_all20":1.0},{"pair":"c","x":"股價年報酬率","y":"實質薪資年增率","exploratory":"否","sample":"全樣本","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"","n":23,"pearson_r":0.167,"pearson_p":0.446382,"spearman_rho":0.131,"spearman_p":0.550016,"pearson_p_holm_all20":1.0},{"pair":"c","x":"股價年報酬率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2008–2009","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2008,2009","n":21,"pearson_r":0.04,"pearson_p":0.861691,"spearman_rho":0.139,"spearman_p":0.548018,"pearson_p_holm_all20":1.0},{"pair":"c","x":"股價年報酬率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2020","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2020","n":22,"pearson_r":0.139,"pearson_p":0.538033,"spearman_rho":0.086,"spearman_p":0.702256,"pearson_p_holm_all20":1.0},{"pair":"c","x":"股價年報酬率","y":"實質薪資年增率","exploratory":"否","sample":"排除 2008、2009、2020","x_years":"2002–2025","missing_x_years":"2019","dropped_x_years":"2008,2009,2020","n":20,"pearson_r":-0.033,"pearson_p":0.89044,"spearman_rho":0.078,"spearman_p":0.743149,"pearson_p_holm_all20":1.0},{"pair":"d1","x":"股價年報酬率","y":"實質 GDP 成長率（下一年）","exploratory":"是","sample":"全樣本","x_years":"2002–2024","missing_x_years":"","dropped_x_years":"","n":23,"pearson_r":0.777,"pearson_p":1.3e-05,"spearman_rho":0.665,"spearman_p":0.000536,"pearson_p_holm_all20":0.00026},{"pair":"d1","x":"股價年報酬率","y":"實質 GDP 成長率（下一年）","exploratory":"是","sample":"排除 2008–2009","x_years":"2002–2024","missing_x_years":"","dropped_x_years":"2007,2008,2009","n":20,"pearson_r":0.604,"pearson_p":0.004757,"spearman_rho":0.582,"spearman_p":0.007104,"pearson_p_holm_all20":0.085626},{"pair":"d1","x":"股價年報酬率","y":"實質 GDP 成長率（下一年）","exploratory":"是","sample":"排除 2020","x_years":"2002–2024","missing_x_years":"","dropped_x_years":"2019,2020","n":21,"pearson_r":0.788,"pearson_p":2.2e-05,"spearman_rho":0.669,"spearman_p":0.000916,"pearson_p_holm_all20":0.000418},{"pair":"d1","x":"股價年報酬率","y":"實質 GDP 成長率（下一年）","exploratory":"是","sample":"排除 2008、2009、2020","x_years":"2002–2024","missing_x_years":"","dropped_x_years":"2007,2008,2009,2019,2020","n":18,"pearson_r":0.616,"pearson_p":0.006465,"spearman_rho":0.593,"spearman_p":0.009433,"pearson_p_holm_all20":0.109905},{"pair":"d2","x":"股價年報酬率","y":"實質薪資年增率（下一年）","exploratory":"是","sample":"全樣本","x_years":"2002–2024","missing_x_years":"2018","dropped_x_years":"","n":22,"pearson_r":0.317,"pearson_p":0.150705,"spearman_rho":0.392,"spearman_p":0.070841,"pearson_p_holm_all20":1.0},{"pair":"d2","x":"股價年報酬率","y":"實質薪資年增率（下一年）","exploratory":"是","sample":"排除 2008–2009","x_years":"2002–2024","missing_x_years":"2018","dropped_x_years":"2007,2008,2009","n":19,"pearson_r":0.26,"pearson_p":0.282333,"spearman_rho":0.247,"spearman_p":0.307239,"pearson_p_holm_all20":1.0},{"pair":"d2","x":"股價年報酬率","y":"實質薪資年增率（下一年）","exploratory":"是","sample":"排除 2020","x_years":"2002–2024","missing_x_years":"2018","dropped_x_years":"2019,2020","n":20,"pearson_r":0.303,"pearson_p":0.194304,"spearman_rho":0.403,"spearman_p":0.078093,"pearson_p_holm_all20":1.0},{"pair":"d2","x":"股價年報酬率","y":"實質薪資年增率（下一年）","exploratory":"是","sample":"排除 2008、2009、2020","x_years":"2002–2024","missing_x_years":"2018","dropped_x_years":"2007,2008,2009,2019,2020","n":17,"pearson_r":0.233,"pearson_p":0.369146,"spearman_rho":0.257,"spearman_p":0.318668,"pearson_p_holm_all20":1.0}],"cum":[{"table":"主表","variable":"加權指數（年底收盤，名目、不含股利）","period":"2002–2025","years":23,"cumulative_change_pct":550.51,"cagr_pct":8.48,"method":"2025 年底收盤 ÷ 2002 年底收盤"},{"table":"主表","variable":"實質 GDP","period":"2002–2025","years":23,"cumulative_change_pct":146.74,"cagr_pct":4.0,"method":"2003–2025 年成長率連乘"},{"table":"主表","variable":"實質經常性薪資","period":"2002–2025","years":23,"cumulative_change_pct":2.81,"cagr_pct":0.12,"method":"2025 年統計值 ÷ 2002 年統計值（跨 2009、2019 兩次統計範圍調整）"},{"table":"薪資斷點","variable":"實質經常性薪資","period":"2002–2008","years":6,"cumulative_change_pct":-4.72,"cagr_pct":-0.8,"method":"2008 年統計值 ÷ 2002 年統計值（調整前，範圍一致）"},{"table":"薪資斷點","variable":"實質經常性薪資","period":"2008–2009","years":1,"cumulative_change_pct":-1.22,"cagr_pct":-1.22,"method":"2009 年統計值 ÷ 2008 年統計值（跨 2009 調整，前後範圍不同）"},{"table":"薪資斷點","variable":"實質經常性薪資","period":"2009–2018","years":9,"cumulative_change_pct":4.73,"cagr_pct":0.51,"method":"2018 年統計值 ÷ 2009 年統計值（兩次調整之間，範圍一致）"},{"table":"薪資斷點","variable":"實質經常性薪資","period":"2018–2019","years":1,"cumulative_change_pct":1.27,"cagr_pct":1.27,"method":"2019 年統計值 ÷ 2018 年統計值（跨 2019 調整，前後範圍不同）"},{"table":"薪資斷點","variable":"實質經常性薪資","period":"2019–2025","years":6,"cumulative_change_pct":2.99,"cagr_pct":0.49,"method":"2025 年統計值 ÷ 2019 年統計值（2019 調整後，範圍一致）"},{"table":"分段對照","variable":"加權指數（年底收盤，名目、不含股利）","period":"2002–2008","years":6,"cumulative_change_pct":3.12,"cagr_pct":0.51,"method":"2008 年底收盤 ÷ 2002 年底收盤"},{"table":"分段對照","variable":"實質 GDP","period":"2002–2008","years":6,"cumulative_change_pct":33.82,"cagr_pct":4.98,"method":"2003–2008 年成長率連乘"},{"table":"分段對照","variable":"加權指數（年底收盤，名目、不含股利）","period":"2009–2018","years":9,"cumulative_change_pct":18.8,"cagr_pct":1.93,"method":"2018 年底收盤 ÷ 2009 年底收盤"},{"table":"分段對照","variable":"實質 GDP","period":"2009–2018","years":9,"cumulative_change_pct":38.65,"cagr_pct":3.7,"method":"2010–2018 年成長率連乘"},{"table":"分段對照","variable":"加權指數（年底收盤，名目、不含股利）","period":"2019–2025","years":6,"cumulative_change_pct":141.42,"cagr_pct":15.82,"method":"2025 年底收盤 ÷ 2019 年底收盤"},{"table":"分段對照","variable":"實質 GDP","period":"2019–2025","years":6,"cumulative_change_pct":31.15,"cagr_pct":4.62,"method":"2020–2025 年成長率連乘"}]};
+
+// ---------------------------------------------------------------- helpers
+const $ = (s) => document.querySelector(s);
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const START = 2002, END = 2025;
+const YEARS = D.rows.filter(r => r.year >= START).map(r => r.year);
+const byYear = Object.fromEntries(D.rows.map(r => [r.year, r]));
+const CRISIS = [2008, 2009, 2020];
+const fmt = (v, d = 2) => v == null || Number.isNaN(v) ? "" : v.toLocaleString("zh-TW", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sign = (v, d = 2) => v == null ? "" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), d);
+const fmtP = (p) => p == null ? "" : p < 0.001 ? "< 0.001" : p.toFixed(3);
+const BLANK = "空白";
+
+function el(tag, attrs = {}, html = "") {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  e.innerHTML = html;
+  return e;
+}
+
+// ---------------------------------------------------------------- tabs
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(t, focus) {
+  tabs.forEach(x => {
+    const on = x === t;
+    x.setAttribute("aria-selected", on);
+    x.tabIndex = on ? 0 : -1;
+    document.getElementById(x.getAttribute("aria-controls")).classList.toggle("active", on);
+  });
+  if (focus) t.focus();
+  try { history.replaceState(null, "", "#" + t.getAttribute("aria-controls")); } catch (e) {}
+}
+tabs.forEach((t, i) => {
+  t.addEventListener("click", () => selectTab(t));
+  t.addEventListener("keydown", (e) => {
+    const k = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (k) { e.preventDefault(); selectTab(tabs[(i + k + tabs.length) % tabs.length], true); }
+  });
+});
+const initial = tabs.find(t => "#" + t.getAttribute("aria-controls") === location.hash);
+if (initial) selectTab(initial);
+
+// ---------------------------------------------------------------- tables (render even if Chart.js fails)
+function dataTable(table, years, cols) {
+  const head = "<thead><tr><th>年</th>" + cols.map(c => `<th class="${c.cls || ""}">${c.label}</th>`).join("") + "</tr></thead>";
+  const body = years.map(y => {
+    const r = byYear[y];
+    return "<tr><td>" + y + "</td>" + cols.map(c => {
+      const v = c.get(r, y);
+      if (c.text) return `<td class="note">${v || ""}</td>`;
+      return v == null ? `<td class="blank">${BLANK}</td>` : `<td>${c.f(v)}</td>`;
+    }).join("") + "</tr>";
+  }).join("");
+  table.innerHTML = head + "<tbody>" + body + "</tbody>";
+}
+
+// ---------------------------------------------------------------- charts
+let charts = [];
+const hasChart = typeof window.Chart !== "undefined";
+if (!hasChart) $("#err").style.display = "block";
+
+// 灰底區間與垂直虛線（自製外掛，不需額外程式庫）
+const marksPlugin = {
+  id: "marks",
+  beforeDatasetsDraw(chart, args, opts) {
+    const { ctx, chartArea: a, scales: { x } } = chart;
+    if (!opts || !x) return;
+    const labels = chart.data.labels;
+    const px = (yr) => x.getPixelForValue(labels.indexOf(yr));
+    const step = labels.length > 1 ? Math.abs(px(labels[1]) - px(labels[0])) : 20;
+    const narrow = a.right - a.left < 420;
+    ctx.save();
+    ctx.font = `${narrow ? 10 : 11}px ${Chart.defaults.font.family}`;
+    ctx.textBaseline = "top";
+    for (const b of opts.bands || []) {
+      if (!labels.includes(b.from) || !labels.includes(b.to)) continue;
+      const l = px(b.from) - step / 2, r = px(b.to) + step / 2;
+      ctx.fillStyle = css("--shade");
+      ctx.fillRect(l, a.top, r - l, a.bottom - a.top);
+      ctx.fillStyle = css("--ink-2");
+      ctx.textAlign = "center";
+      ctx.fillText(narrow ? b.short : b.label, (l + r) / 2, a.top + 4);
+    }
+    for (const ln of opts.lines || []) {
+      if (!labels.includes(ln.at)) continue;
+      const xx = px(ln.at) - step / 2;
+      ctx.strokeStyle = css("--axis-ink");
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xx, a.top); ctx.lineTo(xx, a.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = css("--ink-2");
+      ctx.textAlign = "left";
+      const lines = (narrow ? ln.short : ln.label).split("\n");
+      lines.forEach((t, i) => ctx.fillText(t, xx + 4, a.top + 4 + i * 14));
+    }
+    ctx.restore();
+  },
+};
+
+function baseOptions(yTitle, extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 300 },
+    interaction: { mode: "index", intersect: false },
+    layout: { padding: { top: 4, right: 6 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: css("--surface"),
+        titleColor: css("--ink"),
+        bodyColor: css("--ink-2"),
+        footerColor: css("--muted"),
+        borderColor: css("--axis"),
+        borderWidth: 1,
+        padding: 10,
+        boxPadding: 4,
+        usePointStyle: true,
+        titleFont: { weight: "bold" },
+        footerFont: { weight: "normal", size: 11 },
+      },
+      ...extra.plugins,
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { color: css("--axis") },
+        ticks: { color: css("--axis-ink"), maxRotation: 0, autoSkipPadding: 10 },
+        ...(extra.x || {}),
+      },
+      y: {
+        grid: { color: css("--grid") },
+        border: { display: false },
+        ticks: { color: css("--axis-ink") },
+        title: { display: !!yTitle, text: yTitle, color: css("--ink-2") },
+        ...(extra.y || {}),
+      },
+    },
+  };
+}
+
+function lineDs(label, data, color, opt = {}) {
+  return {
+    type: "line", label, data,
+    borderColor: color, backgroundColor: color,
+    borderWidth: 2, pointRadius: 3, pointHoverRadius: 6,
+    pointBorderColor: css("--surface"), pointBorderWidth: 1.5,
+    spanGaps: false, tension: 0, ...opt,
+  };
+}
+
+const CRISIS_MARKS = {
+  bands: [
+    { from: 2008, to: 2009, label: "2008–2009 金融海嘯", short: "金融海嘯" },
+    { from: 2020, to: 2020, label: "2020 疫情", short: "疫情" },
+  ],
+};
+const WAGE_BREAK_MARKS = {
+  lines: [
+    { at: 2009, label: "2009 薪資統計\n新增教育業", short: "2009\n範圍調整" },
+    { at: 2019, label: "2019 薪資統計\n範圍擴大", short: "2019\n範圍調整" },
+  ],
+};
+
+// ---------- tab 1
+const yFrom = $("#yFrom"), yTo = $("#yTo");
+YEARS.forEach(y => { yFrom.append(new Option(y, y)); yTo.append(new Option(y, y)); });
+yFrom.value = START; yTo.value = END;
+let c1a, c1b;
+
+function tile(k, v, d, sw) {
+  return `<div class="tile"><div class="k">${sw ? `<i class="sw" style="background:var(${sw})"></i>` : ""}${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+}
+
+function updateTab1() {
+  let a = +yFrom.value, b = +yTo.value;
+  if (a > b) { [a, b] = [b, a]; yFrom.value = a; yTo.value = b; }
+  const ys = YEARS.filter(y => y >= a && y <= b);
+  document.querySelectorAll("#presets .chip").forEach(c =>
+    c.setAttribute("aria-pressed", +c.dataset.from === a && +c.dataset.to === b));
+
+  const t0 = byYear[a].taiex_close, t1 = byYear[b].taiex_close;
+  const g = ys.map(y => byYear[y].gdp_growth).filter(v => v != null);
+  const w = ys.map(y => byYear[y].real_wage_growth).filter(v => v != null);
+  const wMissing = ys.filter(y => byYear[y].real_wage_growth == null);
+  const avg = (arr) => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const span = b - a;
+  $("#tiles1").innerHTML =
+    tile("加權指數年底收盤", fmt(t1, 0),
+      span ? `${a} 年底 ${fmt(t0, 0)} → ${b} 年底，${sign((t1 / t0 - 1) * 100, 1)}%（名目）` : `${b} 年底`, "--s1") +
+    tile("實質 GDP 成長率（平均）", fmt(avg(g), 2) + "%", `${a}–${b}，${g.length} 年平均`, "--s2") +
+    tile("實質薪資年增率（平均）", w.length ? fmt(avg(w), 2) + "%" : BLANK,
+      `${w.length} 年平均${wMissing.length ? `；${wMissing.join("、")} 年官方缺值未計入` : ""}`, "--s3") +
+    tile("實質薪資負成長年數", `${w.filter(v => v < 0).length} 年`, `有數字的 ${w.length} 年中`);
+
+  dataTable($("#tbl1"), ys, [
+    { label: "加權指數年底收盤", get: r => r.taiex_close, f: v => fmt(v, 2) },
+    { label: "股價年報酬率（%）", get: r => r.taiex_return, f: v => fmt(v, 2) },
+    { label: "實質 GDP 成長率（%）", get: r => r.gdp_growth, f: v => fmt(v, 2) },
+    { label: "實質經常性薪資（元）", get: r => r.real_wage, f: v => fmt(v, 0) },
+    { label: "實質薪資年增率（%）", get: r => r.real_wage_growth, f: v => fmt(v, 2) },
+    { label: "備註", cls: "l", text: true, get: r => r.note },
+  ]);
+
+  if (!hasChart) return;
+  const lbl = ys;
+  c1a.data.labels = lbl;
+  c1a.data.datasets[0].data = ys.map(y => byYear[y].taiex_close);
+  c1a.update();
+  c1b.data.labels = lbl;
+  c1b.data.datasets[0].data = ys.map(y => byYear[y].gdp_growth);
+  c1b.data.datasets[1].data = ys.map(y => byYear[y].real_wage_growth);
+  c1b.update();
+}
+
+const wageMissingFooter = (items) => {
+  const y = +items[0].label;
+  return byYear[y] && byYear[y].real_wage_growth == null && y >= START
+    ? "實質薪資年增率：空白（2019 年統計範圍擴大，官方未公布）" : "";
+};
+
+function buildTab1() {
+  c1a = new Chart($("#c1a"), {
+    type: "line",
+    data: { labels: [], datasets: [lineDs("加權指數", [], css("--s1"))] },
+    options: baseOptions("點", {
+      plugins: { tooltip: { callbacks: { label: (c) => ` 加權指數：${fmt(c.parsed.y, 2)}` } } },
+      y: { ticks: { color: css("--axis-ink"), callback: v => v.toLocaleString("zh-TW") } },
+    }),
+  });
+  c1b = new Chart($("#c1b"), {
+    type: "line",
+    data: { labels: [], datasets: [
+      lineDs("實質 GDP 成長率", [], css("--s2"), { pointStyle: "rect" }),
+      lineDs("實質薪資年增率", [], css("--s3"), { pointStyle: "triangle" }),
+    ] },
+    options: baseOptions("%", {
+      plugins: { tooltip: { callbacks: {
+        label: (c) => ` ${c.dataset.label}：${fmt(c.parsed.y, 2)}%`,
+        footer: wageMissingFooter,
+      } } },
+      y: { grid: { color: (c) => c.tick.value === 0 ? css("--axis") : css("--grid") } },
+    }),
+  });
+  charts.push(c1a, c1b);
+}
+
+yFrom.addEventListener("change", updateTab1);
+yTo.addEventListener("change", updateTab1);
+document.querySelectorAll("#presets .chip").forEach(c => c.addEventListener("click", () => {
+  yFrom.value = c.dataset.from; yTo.value = c.dataset.to; updateTab1();
+}));
+
+// ---------- tab 2
+const IDX = D.index; // {year:[], taiex:[], gdp:[], wage:[]}
+function tiles2() {
+  const last = IDX.year.length - 1;
+  const cum = (v) => D.cum.find(r => r.table === "主表" && r.variable.startsWith(v));
+  const ct = cum("加權指數"), cg = cum("實質 GDP"), cw = cum("實質經常性薪資");
+  $("#tiles2").innerHTML =
+    tile("加權指數（名目）", fmt(IDX.taiex[last], 1), `2025 年；年複合成長率 ${fmt(ct.cagr_pct, 2)}%`, "--s1") +
+    tile("實質 GDP", fmt(IDX.gdp[last], 1), `2025 年；年複合成長率 ${fmt(cg.cagr_pct, 2)}%`, "--s2") +
+    tile("實質經常性薪資", fmt(IDX.wage[last], 1), `2025 年；年複合成長率 ${fmt(cw.cagr_pct, 2)}%`, "--s3");
+  dataTable($("#tbl2"), IDX.year, [
+    { label: "加權指數（2002=100）", get: (r, y) => IDX.taiex[IDX.year.indexOf(y)], f: v => fmt(v, 1) },
+    { label: "實質 GDP（2002=100）", get: (r, y) => IDX.gdp[IDX.year.indexOf(y)], f: v => fmt(v, 1) },
+    { label: "實質經常性薪資（2002=100）", get: (r, y) => IDX.wage[IDX.year.indexOf(y)], f: v => fmt(v, 1) },
+  ]);
+}
+function legend2() {
+  const on = $("#addWage").checked;
+  $("#legend2").innerHTML =
+    `<span><i class="sw" style="background:var(--s1)"></i>加權指數（名目）</span>` +
+    `<span><i class="sw" style="background:var(--s2)"></i>實質 GDP</span>` +
+    (on ? `<span><i class="sw" style="background:var(--s3)"></i>實質經常性薪資</span>` : "") +
+    `<span><i class="sw shade"></i>2008–2009、2020</span>`;
+}
+let c2;
+function buildTab2() {
+  c2 = new Chart($("#c2"), {
+    type: "line",
+    data: { labels: IDX.year, datasets: [
+      lineDs("加權指數（名目）", IDX.taiex, css("--s1")),
+      lineDs("實質 GDP", IDX.gdp, css("--s2"), { pointStyle: "rect" }),
+      lineDs("實質經常性薪資", IDX.wage, css("--s3"), { pointStyle: "triangle", hidden: !$("#addWage").checked }),
+    ] },
+    options: baseOptions("指數（2002 = 100）", {
+      plugins: {
+        marks: CRISIS_MARKS,
+        tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}：${fmt(c.parsed.y, 1)}` } },
+      },
+      y: { grid: { color: (c) => c.tick.value === 100 ? css("--axis") : css("--grid") } },
+    }),
+    plugins: [marksPlugin],
+  });
+  charts.push(c2);
+}
+$("#addWage").addEventListener("change", () => {
+  legend2();
+  if (c2) { c2.setDatasetVisibility(2, $("#addWage").checked); c2.update(); }
+});
+
+// ---------- tab 3
+function tables3() {
+  dataTable($("#tbl3"), YEARS, [
+    { label: "實質 GDP 成長率（%）", get: r => r.gdp_growth, f: v => fmt(v, 2) },
+    { label: "實質經常性薪資（元）", get: r => r.real_wage, f: v => fmt(v, 0) },
+    { label: "實質薪資年增率（%）", get: r => r.real_wage_growth, f: v => fmt(v, 2) },
+    { label: "備註", cls: "l", text: true, get: r => r.note },
+  ]);
+  const seg = D.cum.filter(r => r.table === "薪資斷點");
+  const gdpSeg = Object.fromEntries(D.cum.filter(r => r.table === "分段對照" && r.variable === "實質 GDP").map(r => [r.period, r]));
+  $("#tbl3seg").innerHTML =
+    "<thead><tr><th>期間</th><th>實質薪資</th><th>年複合</th><th>同期實質 GDP</th></tr></thead><tbody>" +
+    seg.map(r => {
+      const cross = r.method.includes("前後範圍不同");
+      const g = gdpSeg[r.period];
+      return `<tr${cross ? "" : ' class="hl"'}><td>${r.period.replace("–", cross ? "→" : "–")}<span class="small">${cross ? "跨調整，範圍不同" : "範圍一致"}</span></td>` +
+        `<td>${sign(r.cumulative_change_pct)}%</td><td>${cross ? "—" : sign(r.cagr_pct) + "%"}</td>` +
+        `<td>${g ? sign(g.cumulative_change_pct, 1) + "%" : "—"}</td></tr>`;
+    }).join("") + "</tbody>";
+}
+let c3a, c3b;
+function buildTab3() {
+  c3a = new Chart($("#c3a"), {
+    type: "bar",
+    data: { labels: YEARS, datasets: [
+      { type: "bar", label: "實質 GDP 成長率", data: YEARS.map(y => byYear[y].gdp_growth),
+        backgroundColor: css("--s2"), borderRadius: 4, borderSkipped: "start",
+        borderColor: css("--surface"), borderWidth: { left: 1, right: 1 },
+        categoryPercentage: 0.8, barPercentage: 0.85, order: 2 },
+      lineDs("實質薪資年增率", YEARS.map(y => byYear[y].real_wage_growth), css("--s3"),
+        { pointStyle: "triangle", pointRadius: 4, order: 1 }),
+    ] },
+    options: baseOptions("%", {
+      plugins: {
+        marks: WAGE_BREAK_MARKS,
+        tooltip: { callbacks: {
+          label: (c) => ` ${c.dataset.label}：${fmt(c.parsed.y, 2)}%`,
+          footer: wageMissingFooter,
+        } },
+      },
+      y: { grid: { color: (c) => c.tick.value === 0 ? css("--axis") : css("--grid") } },
+    }),
+    plugins: [marksPlugin],
+  });
+  c3b = new Chart($("#c3b"), {
+    type: "line",
+    data: { labels: YEARS, datasets: [lineDs("實質經常性薪資", YEARS.map(y => byYear[y].real_wage), css("--s3"), { pointStyle: "triangle" })] },
+    options: baseOptions("元", {
+      plugins: {
+        marks: WAGE_BREAK_MARKS,
+        tooltip: { callbacks: { label: (c) => ` 實質經常性薪資：${fmt(c.parsed.y, 0)} 元` } },
+      },
+      y: { ticks: { color: css("--axis-ink"), callback: v => v.toLocaleString("zh-TW") } },
+    }),
+    plugins: [marksPlugin],
+  });
+  charts.push(c3a, c3b);
+}
+
+// ---------- tab 4
+const PAIRS = [
+  { tag: "a", x: "taiex_return", y: "gdp_growth", lag: 0, name: "股價報酬 vs 同年 GDP 成長" },
+  { tag: "b", x: "gdp_growth", y: "real_wage_growth", lag: 0, name: "GDP 成長 vs 實質薪資年增率" },
+  { tag: "c", x: "taiex_return", y: "real_wage_growth", lag: 0, name: "股價報酬 vs 實質薪資年增率" },
+  { tag: "d1", x: "taiex_return", y: "gdp_growth", lag: 1, name: "股價報酬 vs 下一年 GDP 成長", explore: true },
+  { tag: "d2", x: "taiex_return", y: "real_wage_growth", lag: 1, name: "股價報酬 vs 下一年實質薪資年增率", explore: true },
+];
+const SAMPLES = ["全樣本", "排除 2008–2009", "排除 2020", "排除 2008、2009、2020"];
+const AXIS_LABEL = { taiex_return: "股價年報酬率（%）", gdp_growth: "實質 GDP 成長率（%）", real_wage_growth: "實質薪資年增率（%）" };
+const rob = (tag, s) => D.robust.find(r => r.pair === tag && r.sample === s);
+
+function tableCorr() {
+  $("#tblCorr").innerHTML =
+    "<thead><tr><th>組別</th><th>n</th><th>排除年份</th><th>Pearson r</th><th>p 值</th><th>Holm 校正 p</th><th>Spearman ρ</th><th>p 值</th></tr></thead><tbody>" +
+    PAIRS.map(p => {
+      const r = D.main.find(m => m.pair === p.tag);
+      return `<tr><td class="l">${p.tag}　${p.name}${p.explore ? '<span class="tag explore">探索性</span>' : ""}</td>` +
+        `<td>${r.n}</td><td>${r.missing_x_years ? (p.lag ? r.missing_x_years + "→" + (+r.missing_x_years + 1) : r.missing_x_years) + "（缺值）" : "—"}</td>` +
+        `<td>${fmt(r.pearson_r, 2)}</td><td>${fmtP(r.pearson_p)}</td><td>${fmtP(r.pearson_p_holm_main5)}</td>` +
+        `<td>${fmt(r.spearman_rho, 2)}</td><td>${fmtP(r.spearman_p)}</td></tr>`;
+    }).join("") + "</tbody>";
+}
+
+let method = "pearson";
+function tableRobust() {
+  const coef = method === "pearson" ? "pearson_r" : "spearman_rho";
+  const pv = method === "pearson" ? "pearson_p" : "spearman_p";
+  $("#tblRobust").innerHTML =
+    "<thead><tr><th>組別</th>" + SAMPLES.map(s => `<th>${s}</th>`).join("") + "</tr></thead><tbody>" +
+    PAIRS.map(p => "<tr><td class='l'>" + p.tag + "　" + p.name + (p.explore ? '<span class="tag explore">探索性</span>' : "") + "</td>" +
+      SAMPLES.map(s => {
+        const r = rob(p.tag, s);
+        const star = r[pv] < 0.05 ? "＊" : "";
+        const dag = method === "pearson" && r.pearson_p_holm_all20 < 0.05 ? "†" : "";
+        return `<td><b>${fmt(r[coef], 2)}</b>${star}${dag}<span class="small">n=${r.n}，p ${r[pv] < 0.001 ? "" : "= "}${fmtP(r[pv])}</span></td>`;
+      }).join("") + "</tr>").join("") + "</tbody>";
+}
+document.querySelectorAll("#methodSeg button").forEach(b => b.addEventListener("click", () => {
+  method = b.dataset.m;
+  document.querySelectorAll("#methodSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  tableRobust();
+}));
+
+const pairSel = $("#pairSel"), sampleSel = $("#sampleSel");
+PAIRS.forEach(p => pairSel.append(new Option(`${p.tag}　${p.name}${p.explore ? "（探索性）" : ""}`, p.tag)));
+SAMPLES.forEach(s => sampleSel.append(new Option(s, s)));
+
+function scatterPoints(p) {
+  const pts = [];
+  for (const y of YEARS) {
+    const t1 = y + p.lag;
+    if (t1 > END) continue;
+    const xv = byYear[y][p.x], yv = byYear[t1][p.y];
+    if (xv == null || yv == null) continue;
+    pts.push({ x: xv, y: yv, year: y, y2: t1 });
+  }
+  return pts;
+}
+function ols(pts) {
+  const n = pts.length, mx = pts.reduce((s, q) => s + q.x, 0) / n, my = pts.reduce((s, q) => s + q.y, 0) / n;
+  let sxy = 0, sxx = 0;
+  pts.forEach(q => { sxy += (q.x - mx) * (q.y - my); sxx += (q.x - mx) ** 2; });
+  const b = sxy / sxx, a = my - b * mx;
+  const xs = pts.map(q => q.x), lo = Math.min(...xs), hi = Math.max(...xs);
+  return [{ x: lo, y: a + b * lo }, { x: hi, y: a + b * hi }];
+}
+let c4;
+function updateScatter() {
+  const p = PAIRS.find(q => q.tag === pairSel.value), s = sampleSel.value, r = rob(p.tag, s);
+  const dropped = String(r.dropped_x_years || "").split(",").filter(Boolean).map(Number);
+  const all = scatterPoints(p);
+  const kept = all.filter(q => !dropped.includes(q.year));
+  const out = all.filter(q => dropped.includes(q.year));
+  const isCrisis = (q) => CRISIS.includes(q.year) || CRISIS.includes(q.y2);
+  $("#scatterStat").innerHTML =
+    `${p.explore ? '<span class="tag explore" style="margin:0 6px 0 0">探索性</span>' : ""}` +
+    `Pearson r = <b>${fmt(r.pearson_r, 2)}</b>（p ${r.pearson_p < 0.001 ? "" : "= "}${fmtP(r.pearson_p)}）；` +
+    `Spearman ρ = <b>${fmt(r.spearman_rho, 2)}</b>（p ${r.spearman_p < 0.001 ? "" : "= "}${fmtP(r.spearman_p)}）；n = ${r.n}` +
+    `<span class="muted">；未校正，20 檢定 Holm 校正 p ${r.pearson_p_holm_all20 < 0.001 ? "" : "= "}${fmtP(r.pearson_p_holm_all20)}</span>`;
+  if (!hasChart) return;
+  const d = c4.data.datasets;
+  d[0].data = kept.filter(q => !isCrisis(q));
+  d[1].data = kept.filter(isCrisis);
+  d[2].data = out;
+  d[3].data = kept.length > 2 ? ols(kept) : [];
+  c4.options.scales.x.title.text = AXIS_LABEL[p.x];
+  c4.options.scales.y.title.text = AXIS_LABEL[p.y].replace("（%）", p.lag ? "，下一年（%）" : "（%）");
+  c4.update();
+}
+function buildTab4() {
+  const pt = (label, color, extra) => ({ type: "scatter", label, data: [], backgroundColor: color, borderColor: css("--surface"),
+    borderWidth: 1.5, pointRadius: 6, pointHoverRadius: 8, pointHitRadius: 10, ...extra });
+  const opts = baseOptions("", {
+    plugins: { tooltip: {
+      mode: "nearest", intersect: true,
+      callbacks: {
+        title: (items) => { const q = items[0].raw; return q.year ? (q.y2 !== q.year ? `${q.year} → ${q.y2}` : `${q.year} 年`) : ""; },
+        label: (c) => c.dataset.label === "趨勢線" ? null :
+          ` x：${fmt(c.raw.x, 2)}%　y：${fmt(c.raw.y, 2)}%${c.datasetIndex === 2 ? "（此樣本排除）" : ""}`,
+      },
+      filter: (i) => i.dataset.label !== "趨勢線",
+    } },
+    x: { type: "linear", grid: { color: (c) => c.tick.value === 0 ? css("--axis") : css("--grid") },
+      title: { display: true, text: "", color: css("--ink-2") } },
+    y: { grid: { color: (c) => c.tick.value === 0 ? css("--axis") : css("--grid") } },
+  });
+  opts.interaction = { mode: "nearest", intersect: true };
+  opts.scales.y.title.display = true;
+  c4 = new Chart($("#c4"), {
+    type: "scatter",
+    data: { datasets: [
+      pt("一般年份", css("--s1"), {}),
+      pt("涉及 2008、2009 或 2020", css("--s2"), { pointStyle: "rectRot", pointRadius: 7 }),
+      pt("此樣本中被排除", "transparent", { borderColor: css("--excluded"), borderWidth: 1.5 }),
+      { type: "line", label: "趨勢線", data: [], borderColor: css("--axis-ink"), borderWidth: 1.5,
+        borderDash: [5, 4], pointRadius: 0, pointHitRadius: 0, fill: false },
+    ] },
+    options: opts,
+  });
+  charts.push(c4);
+}
+pairSel.addEventListener("change", updateScatter);
+sampleSel.addEventListener("change", updateScatter);
+
+// ---------------------------------------------------------------- init
+function buildAll() {
+  charts.forEach(c => c.destroy());
+  charts = [];
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = css("--ink-2");
+  buildTab1(); buildTab2(); buildTab3(); buildTab4();
+  updateTab1(); updateScatter();
+}
+
+tiles2(); legend2(); tables3(); tableCorr(); tableRobust();
+if (hasChart) {
+  buildAll();
+  // 系統切換深淺色時，用新的顏色重畫
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", buildAll); } catch (e) {}
+} else {
+  updateTab1(); updateScatter();
+}
+</script>
+</body>
+</html>
