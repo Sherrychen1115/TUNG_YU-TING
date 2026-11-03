@@ -8,38 +8,37 @@
 <style>
 :root {
   color-scheme: light;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
+  --page: #f3f4f5;
+  --surface: #ffffff;
   --ink: #0b0b0b;
   --ink-2: #52514e;
   --muted: #6f6d68;
   --axis-ink: #898781;
   --grid: #e1e0d9;
   --axis: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.10);
+  --border: #dde1e4;
   --shade: rgba(137, 135, 129, 0.13);
   --s1: #2a78d6;
   --s2: #eb6834;
   --s3: #1baf7a;
   --excluded: #b9b7b0;
-  --accent-bg: #eef4fc;
-  --warn-bg: #fdf3ec;
-  /* 頁籤色：取自圖表配色；填色調深到白字對比約 4.6:1 */
-  --tab1: #52514e;            /* 深灰（--ink-2） */
-  --tab2: #2974d0;            /* 股價藍 --s1 調深 */
-  --tab3: #15855d;            /* 薪資綠 --s3 調深 */
-  --tab4: #be542a;            /* GDP 橘 --s2 調深 */
-  --tab1-line: var(--tab1);
-  --tab2-line: var(--tab2);
-  --tab3-line: var(--tab3);
-  --tab4-line: var(--tab4);
-  --tab-shadow: 0 2px 8px rgba(11, 11, 11, 0.18);
+  --accent-bg: #e7eff1;
+  --warn-bg: #f2efe8;
+  /* 頁面配色：沉穩的灰藍；圖表的 --s1/--s2/--s3 只用在資料上 */
+  --heading: #2c3e4f;
+  --brand: #1f4e5f;
+  --brand-hover: #2f6274;
+  --brand-ink: #1f4e5f;
+  --tab-bg: #e6e9ec;
+  --tab-bg-hover: #f5f6f7;
+  --tab-ink: #3a4650;
+  --tab-shadow: 0 2px 6px rgba(31, 78, 95, 0.22);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
+    --page: #121416;
+    --surface: #1b1e21;
     --ink: #f0efec;
     --ink-2: #c3c2b7;
     --muted: #a3a19a;
@@ -52,19 +51,22 @@
     --s2: #d95926;
     --s3: #199e70;
     --excluded: #55544f;
-    --accent-bg: #16233a;
-    --warn-bg: #2e1d14;
-    --tab1-line: #a3a19a;
-    --tab2-line: #3987e5;
-    --tab3-line: #199e70;
-    --tab4-line: #d95926;
-    --tab-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+    --accent-bg: #172a30;
+    --warn-bg: #27241e;
+    --heading: #c9d6de;
+    --brand: #256377;
+    --brand-hover: #327388;
+    --brand-ink: #8cc3d3;
+    --tab-bg: #24282c;
+    --tab-bg-hover: #2e3338;
+    --tab-ink: #c9cfd4;
+    --tab-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
+  --page: #121416;
+  --surface: #1b1e21;
   --ink: #f0efec;
   --ink-2: #c3c2b7;
   --muted: #a3a19a;
@@ -77,13 +79,16 @@
   --s2: #d95926;
   --s3: #199e70;
   --excluded: #55544f;
-  --accent-bg: #16233a;
-  --warn-bg: #2e1d14;
-  --tab1-line: #a3a19a;
-  --tab2-line: #3987e5;
-  --tab3-line: #199e70;
-  --tab4-line: #d95926;
-  --tab-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+  --accent-bg: #172a30;
+  --warn-bg: #27241e;
+  --heading: #c9d6de;
+  --brand: #256377;
+  --brand-hover: #327388;
+  --brand-ink: #8cc3d3;
+  --tab-bg: #24282c;
+  --tab-bg-hover: #2e3338;
+  --tab-ink: #c9cfd4;
+  --tab-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 * { box-sizing: border-box; }
@@ -100,7 +105,7 @@ body {
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
 
 header { padding: 28px 0 8px; }
-header h1 { font-size: clamp(1.35rem, 3.6vw, 1.9rem); line-height: 1.3; margin: 0 0 6px; letter-spacing: 0.01em; }
+header h1 { color: var(--heading); font-size: clamp(1.35rem, 3.6vw, 1.9rem); line-height: 1.3; margin: 0 0 6px; letter-spacing: 0.01em; }
 header p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
 
 nav.tabs {
@@ -108,61 +113,40 @@ nav.tabs {
   background: var(--page);
   margin-top: 16px;
   padding-top: 8px;
-  border-bottom: 2px solid var(--active, var(--border));
-  transition: border-color 0.2s;
+  border-bottom: 2px solid var(--brand);
 }
-nav.tabs:has(.tab-1[aria-selected="true"]) { --active: var(--tab1-line); }
-nav.tabs:has(.tab-2[aria-selected="true"]) { --active: var(--tab2-line); }
-nav.tabs:has(.tab-3[aria-selected="true"]) { --active: var(--tab3-line); }
-nav.tabs:has(.tab-4[aria-selected="true"]) { --active: var(--tab4-line); }
-.tablist { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 0; }
-.tablist::-webkit-scrollbar { display: none; }
+.tablist { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; padding: 2px 2px 0; -webkit-overflow-scrolling: touch; }
 .tab {
-  --c: var(--tab1); --cl: var(--tab1-line);
   flex: 0 0 auto;
-  display: inline-flex; align-items: center; gap: 8px;
   font: inherit; font-size: 0.95rem;
-  color: var(--ink);
-  background: var(--surface);
+  color: var(--tab-ink);
+  background: var(--tab-bg);
   border: 1px solid var(--border);
-  border-top: 3px solid var(--cl);
   border-bottom: 0;
   border-radius: 8px 8px 0 0;
   cursor: pointer;
-  padding: 8px 14px 9px;
+  padding: 9px 16px 9px;
   white-space: nowrap;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
-.tab-2 { --c: var(--tab2); --cl: var(--tab2-line); }
-.tab-3 { --c: var(--tab3); --cl: var(--tab3-line); }
-.tab-4 { --c: var(--tab4); --cl: var(--tab4-line); }
-.tab:hover { background: color-mix(in srgb, var(--cl) 14%, var(--surface)); }
+.tab:hover { background: var(--tab-bg-hover); }
 .tab[aria-selected="true"] {
-  background: var(--c); color: #fff; font-weight: 700;
-  border-color: var(--c);
+  background: var(--brand); border-color: var(--brand);
+  color: #fff; font-weight: 700;
   box-shadow: var(--tab-shadow);
 }
-.tab[aria-selected="true"]:hover { background: color-mix(in srgb, var(--c) 90%, #fff); }
-.tab:focus-visible { outline: 2px solid var(--cl); outline-offset: 2px; }
-.tab .num {
-  flex: 0 0 auto;
-  display: inline-grid; place-items: center;
-  width: 1.45rem; height: 1.45rem; border-radius: 50%;
-  background: var(--c); color: #fff;
-  font-size: 0.78rem; font-weight: 700; line-height: 1;
-  transition: background-color 0.2s, color 0.2s;
-}
-.tab[aria-selected="true"] .num { background: #fff; color: var(--c); }
+.tab[aria-selected="true"]:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+.tab:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+.tab .num { margin-right: 6px; opacity: 0.7; font-weight: 400; }
 @media (max-width: 600px) {
-  .tablist { flex-wrap: wrap; overflow-x: visible; }
-  .tab { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: normal; text-align: left; font-size: 0.88rem; padding: 7px 10px 8px; line-height: 1.35; }
+  .tab { font-size: 0.9rem; padding: 8px 12px; }
 }
 
 main { padding: 20px 0 48px; }
 section[role="tabpanel"] { display: none; }
 section[role="tabpanel"].active { display: block; }
-h2 { font-size: 1.3rem; margin: 4px 0 4px; }
-h3 { font-size: 1.05rem; margin: 0 0 2px; }
+h2 { color: var(--heading); font-size: 1.3rem; margin: 4px 0 4px; }
+h3 { color: var(--heading); font-size: 1.05rem; margin: 0 0 2px; }
 .lead { color: var(--ink-2); margin: 0 0 18px; max-width: 72ch; }
 
 .card {
@@ -199,7 +183,8 @@ h3 { font-size: 1.05rem; margin: 0 0 2px; }
 
 /* filters */
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 16px; }
-.filters label { font-size: 0.9rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.filters label { font-size: 0.9rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.filters label > select { min-width: 0; max-width: 100%; flex: 0 1 auto; }
 select {
   font: inherit; font-size: 0.92rem; color: var(--ink);
   background: var(--surface); border: 1px solid var(--axis); border-radius: 8px;
@@ -211,8 +196,8 @@ select {
   color: var(--ink-2); background: var(--surface);
   border: 1px solid var(--axis); border-radius: 999px; padding: 4px 12px; min-height: 32px;
 }
-.chip[aria-pressed="true"], .seg button[aria-pressed="true"] { color: #fff; background: var(--s1); border-color: var(--s1); }
-.chip:focus-visible, .seg button:focus-visible, select:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.chip[aria-pressed="true"], .seg button[aria-pressed="true"] { color: #fff; background: var(--brand); border-color: var(--brand); }
+.chip:focus-visible, .seg button:focus-visible, select:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
 .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .check { font-size: 0.9rem; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 
@@ -235,8 +220,8 @@ td.blank { color: var(--muted); }
 td .small { display: block; color: var(--muted); font-size: 0.76rem; white-space: nowrap; }
 tr.hl td { background: var(--accent-bg); }
 details { margin-top: 4px; }
-summary { cursor: pointer; color: var(--s1); font-size: 0.92rem; padding: 4px 0; }
-summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 4px; }
+summary { cursor: pointer; color: var(--brand-ink); font-size: 0.92rem; padding: 4px 0; }
+summary:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; border-radius: 4px; }
 
 /* prose */
 .callout { border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid var(--border); }
@@ -248,7 +233,7 @@ summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; borde
 .finding { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
 .finding p { margin: 6px 0 0; color: var(--ink-2); font-size: 0.93rem; }
 .tag { display: inline-block; font-size: 0.75rem; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; border: 1px solid var(--axis); color: var(--ink-2); font-weight: 400; }
-.tag.explore { border-color: var(--s2); color: var(--ink); }
+.tag.explore { border-color: var(--brand-ink); color: var(--brand-ink); }
 ul.limits { margin: 6px 0 0; padding-left: 1.2em; }
 ul.limits li { margin-bottom: 6px; }
 ul.limits b { color: var(--ink); }
@@ -272,10 +257,10 @@ footer p { margin: 0 0 4px; }
 
   <nav class="tabs" aria-label="儀表板頁籤">
     <div class="tablist" role="tablist">
-      <button class="tab tab-1" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="num">1</span>台灣整體經濟概況</button>
-      <button class="tab tab-2" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="num">2</span>股市與 GDP 比較</button>
-      <button class="tab tab-3" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="num">3</span>經濟成長與實質薪資</button>
-      <button class="tab tab-4" role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1"><span class="num">4</span>綜合判斷</button>
+      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="num">1</span>台灣整體經濟概況</button>
+      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="num">2</span>股市與 GDP 比較</button>
+      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="num">3</span>經濟成長與實質薪資</button>
+      <button class="tab" role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1"><span class="num">4</span>綜合判斷</button>
     </div>
   </nav>
 
@@ -392,7 +377,7 @@ footer p { margin: 0 0 4px; }
       <p class="lead">本頁整理自 <code>analysis/output_long/</code> 的分析結果，請搭配下方的研究限制閱讀。</p>
 
       <div class="callout info">
-        <p><b>一句話結論：</b>2002–2025 年台股指數漲到約 6.5 倍，實質 GDP 約 2.5 倍，實質經常性薪資只增加約 3%；股市很熱不等於薪水跟著變多。</p>
+        <p><b>一句話結論：</b>股市漲很多，不代表薪水也跟著漲。2002 到 2025 年，台股指數漲到原來的約 6.5 倍，整體經濟（扣掉物價後）變成約 2.5 倍，但扣掉物價後的平均薪水只多了約 3%。</p>
         <p class="muted">這裡看的是數字有沒有一起變動，不代表誰造成誰。其他要注意的地方請看本頁最後的「研究限制」。</p>
       </div>
 
@@ -410,19 +395,19 @@ footer p { margin: 0 0 4px; }
 
       <h3 style="margin:24px 0 10px">主要發現</h3>
       <div class="findings">
-        <div class="finding"><h3>1. 股市漲很多，薪水幾乎沒動</h3>
-          <p>把 2002 年當作 100：到 2025 年，台股指數是 650.5（約 6.5 倍），實質 GDP 是 246.7（約 2.5 倍），實質經常性薪資只有 102.8（多約 3%）。整個經濟變大了，但每月固定薪水能買到的東西幾乎一樣。這是比較數字得到的結果，看不出原因。</p></div>
-        <div class="finding"><h3>2. 薪水長期原地踏步</h3>
-          <p>23 個有數字的年份裡，有 11 年的實質薪資比前一年少。薪資在 2002–2009 年往下走，直到 2019–2020 年才回到 2002 年的水準。在統計範圍沒變動的三段期間，薪資平均每年只變動 −0.8% 到 +0.5%。</p></div>
-        <div class="finding"><h3>3. 股市起伏比經濟和薪水大很多</h3>
-          <p>股市 2008 年跌了 46%，2009 年又漲了 78%。經濟成長大多在每年 1%–7% 之間，實質薪資大多只在 ±1.5% 之間小幅變動。</p></div>
-        <div class="finding"><h3>4. 同一年的股市好壞，跟經濟、薪水看不出關係</h3>
-          <p>股市漲的年份，同一年的經濟成長或薪水並沒有特別好，三組比較都不顯著；拿掉 2008–2009 金融海嘯或 2020 疫情再看，結果一樣。經濟和薪水看起來有一點同步，但主要是金融海嘯那兩年兩者一起變差撐起來的，拿掉後幾乎消失。</p></div>
-        <div class="finding"><h3>5. 今年股市和「下一年」經濟<span class="tag explore">探索性</span></h3>
-          <p>全部年份一起看，今年股市漲得多，下一年經濟成長常常比較好。但這主要來自金融海嘯：2008 年股市大跌、2009 年經濟衰退；2009 年股市大漲、2010 年經濟成長 10%。拿掉那幾年，再用比較嚴格的標準檢查後，就不再顯著。所以只能當作線索，不能說股市能預測或造成經濟成長；薪水則沒有看到類似情形。</p></div>
+        <div class="finding"><h3>1. 股市像雲霄飛車，經濟和薪水像平路</h3>
+          <p>股市 2008 年跌 46%、2009 年又漲 78%；經濟成長大多在 1% 到 7% 之間；薪水每年大多只在上下 1.5% 內變動。</p></div>
+        <div class="finding"><h3>2. 長期來看，股市和薪水差很多</h3>
+          <p>如果把 2002 年當成 100，2025 年股價指數是 650，薪水是 103。</p></div>
+        <div class="finding"><h3>3. 經濟變大了，薪水卻沒跟上</h3>
+          <p>2002 到 2025 年，經濟規模增加約 147%，平均薪水只增加約 3%。這只是把兩個數字放在一起看，不能說明原因。</p></div>
+        <div class="finding"><h3>4. 同一年股市好不好，和經濟、薪水看不出關係</h3>
+          <p>同一年股市好不好，看不出和經濟、薪水好不好有關。排除金融海嘯和疫情那幾年，結論也一樣。「看不出關係」不等於「一定沒有關係」，只是這份資料找不到明確證據。</p></div>
+        <div class="finding"><h3>5. 「今年股市漲，明年經濟比較好」看起來有關，但不可靠<span class="tag explore">探索性</span></h3>
+          <p>這主要是金融海嘯那兩年撐出來的，排除之後關聯就變弱，所以只能當作值得再研究的線索，不能說股市能預測經濟。</p></div>
       </div>
 
-      <p class="lead" style="margin:24px 0 12px"><b>想看詳細數字再往下看。</b></p>
+      <p class="lead" style="margin:24px 0 12px"><b>想看詳細數字，請往下看表格。</b></p>
 
       <div class="card">
         <h3>相關係數（全樣本）</h3>
@@ -463,12 +448,12 @@ footer p { margin: 0 0 4px; }
       <div class="card">
         <h3>研究限制</h3>
         <ul class="limits">
-          <li><b>一起變動，不代表誰造成誰。</b>兩個數字常一起動，可能只是巧合，也可能都受第三件事影響，例如全球景氣、半導體景氣起落、利率。</li>
-          <li><b>年份很少。</b>每組比較只有約 17–24 個年份，幾個特別的年份就可能大幅改變結果。所以「不顯著」也可能只是資料不夠多，不代表沒有關係。</li>
-          <li><b>比較做了很多次，標準要拉高。</b>這次一共做了 40 次比較（5 組 × 4 種挑選年份的方式 × 2 種算法）。比較次數一多，光靠運氣也可能碰到看起來「有關係」的結果，所以要用比較嚴格的標準判斷（統計上叫做多重比較校正）。</li>
-          <li><b>股價沒有扣掉物價，也不含股利。</b>加權指數只看股價，沒有扣掉物價上漲，也沒有算進每年發的現金股利（台股每年股利率約 3%–4%）。所以它不是投資人實際賺到的報酬，也不能直接跟扣掉物價的 GDP、薪資比大小。</li>
-          <li><b>薪資只算每月固定薪水，不含獎金。</b>年終獎金、績效獎金、員工分紅都不在內。景氣好的年份獎金通常增加較多，所以這份資料可能低估了受薪者整體收入的變化。</li>
-          <li><b>2009 年、2019 年薪資統計的範圍改過。</b>2009 年新增教育業；2019 年新增研究發展服務業、學前教育、社會工作服務業。前後涵蓋的行業不一樣，跨過這兩年比較要小心。2019 年官方沒有公布薪資年增率，用到那一年的比較都已經拿掉。</li>
+          <li><b>只是一起變動，不代表誰影響誰。</b>兩個數字常一起動，可能只是巧合，也可能都受第三件事影響，例如全球景氣、半導體景氣起落、利率。</li>
+          <li><b>每組只有大約 17–24 年，資料很少。</b>幾個特別的年份就可能大幅改變結果，所以「看不出關係」也可能只是資料不夠多。</li>
+          <li><b>比較的組數多，偶然碰到有關聯的機會變高。</b>這次一共做了 40 次比較（5 組 × 4 種挑選年份的方式 × 2 種算法）。比較次數一多，光靠運氣也可能碰到看起來「有關係」的結果，所以判斷時要用比較嚴格的標準。</li>
+          <li><b>股價沒有扣掉物價，也不含股利。</b>加權指數只看股價，沒有扣掉物價上漲，也沒有算進每年發的現金股利（台股每年股利率約 3%–4%）。所以它不是投資人實際賺到的報酬，也不能直接跟扣掉物價的經濟、薪水比大小。</li>
+          <li><b>薪水不含年終與獎金。</b>這裡的薪水是每月固定的經常性薪資，年終獎金、績效獎金、員工分紅都不在內。景氣好的年份獎金通常增加較多，所以可能低估了整體收入的變化。</li>
+          <li><b>薪水的統計範圍在 2009、2019 年各調整一次。</b>2009 年新增教育業；2019 年新增研究發展服務業、學前教育、社會工作服務業。前後涵蓋的行業不一樣，跨過這兩年比較要小心。2019 年官方沒有公布薪資年增率，用到那一年的比較都已經拿掉。</li>
         </ul>
       </div>
     </section>
