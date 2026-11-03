@@ -1,0 +1,2 @@
+# data/raw 是官方下載的原始檔：一律當成 binary，不轉換換行符號、不做文字 diff
+data/raw/** binary
